@@ -17,42 +17,21 @@ async function perguntar() {
   typingIndicator.style.display = 'flex';
 
   try {
-    console.log('Enviando requisição para a API:', {
-      url: '/api/chat',
-      method: 'POST',
-      body: { pergunta }
-    });
-
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pergunta })
     });
 
-    console.log('Status da resposta:', resp.status);
-    console.log('Headers da resposta:', Object.fromEntries(resp.headers.entries()));
+    // Esconde o indicador de digitação
+    typingIndicator.style.display = 'none';
 
-    // Verifica se a resposta está ok antes de tentar parsear o JSON
+    // Verifica se a resposta está ok
     if (!resp.ok) {
       throw new Error(`Erro na API: ${resp.status} ${resp.statusText}`);
     }
 
-    // Tenta ler o texto da resposta primeiro para debug
-    const responseText = await resp.text();
-    console.log('Resposta bruta da API:', responseText);
-
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Erro ao parsear JSON:', parseError);
-      throw new Error(`Resposta inválida da API: ${responseText}`);
-    }
-
-    console.log('Dados parseados da API:', data);
-
-    // Esconde o indicador de digitação
-    typingIndicator.style.display = 'none';
+    const data = await resp.json();
 
     // Adiciona a resposta do assistente
     const assistantMessage = document.createElement('div');
@@ -78,26 +57,77 @@ async function perguntar() {
     // Rola para a última mensagem
     chatContainer.scrollTop = chatContainer.scrollHeight;
   } catch (error) {
-    console.error('Erro detalhado:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
-
     // Esconde o indicador de digitação
     typingIndicator.style.display = 'none';
     
     const errorMessage = document.createElement('div');
     errorMessage.className = 'message assistant-message';
-    errorMessage.innerHTML = `
-      <div style="color: var(--error-color); margin-bottom: 8px;">
-        <strong>Erro ao processar a requisição:</strong>
-      </div>
-      <div style="font-size: 0.9em; color: var(--text-secondary);">
-        ${error.message}<br>
-        <small>Verifique o console para mais detalhes</small>
-      </div>
-    `;
+    
+    // Determina o tipo de erro e mostra uma mensagem amigável
+    let errorDetails = '';
+    if (error.message.includes('Failed to fetch')) {
+      errorDetails = `
+        <div style="color: var(--error-color); margin-bottom: 8px;">
+          <strong>Erro de Conexão:</strong> Não foi possível conectar ao servidor
+        </div>
+        <div style="font-size: 0.9em; color: var(--text-secondary);">
+          Possíveis causas:
+          <ul style="margin-top: 8px; padding-left: 20px;">
+            <li>O servidor não está rodando</li>
+            <li>Problemas de conexão com a internet</li>
+            <li>O servidor está demorando para responder</li>
+          </ul>
+        </div>
+      `;
+    } else if (error.message.includes('405')) {
+      errorDetails = `
+        <div style="color: var(--error-color); margin-bottom: 8px;">
+          <strong>Erro de Método:</strong> Método não permitido
+        </div>
+        <div style="font-size: 0.9em; color: var(--text-secondary);">
+          O servidor não está configurado para aceitar requisições POST.
+          <br><br>
+          Solução: Verifique se o servidor está rodando com o comando:
+          <pre style="background: var(--background-dark); padding: 8px; border-radius: 4px; margin-top: 8px;">
+npm run dev</pre>
+        </div>
+      `;
+    } else if (error.message.includes('404')) {
+      errorDetails = `
+        <div style="color: var(--error-color); margin-bottom: 8px;">
+          <strong>Erro de Rota:</strong> Endpoint não encontrado
+        </div>
+        <div style="font-size: 0.9em; color: var(--text-secondary);">
+          A rota /api/chat não foi encontrada no servidor.
+          <br><br>
+          Solução: Verifique se o arquivo server.js está configurado corretamente.
+        </div>
+      `;
+    } else if (error.message.includes('500')) {
+      errorDetails = `
+        <div style="color: var(--error-color); margin-bottom: 8px;">
+          <strong>Erro no Servidor:</strong> Erro interno
+        </div>
+        <div style="font-size: 0.9em; color: var(--text-secondary);">
+          Ocorreu um erro no processamento da sua pergunta.
+          <br><br>
+          Detalhes: ${error.message}
+        </div>
+      `;
+    } else {
+      errorDetails = `
+        <div style="color: var(--error-color); margin-bottom: 8px;">
+          <strong>Erro:</strong> ${error.message}
+        </div>
+        <div style="font-size: 0.9em; color: var(--text-secondary);">
+          Ocorreu um erro ao processar sua pergunta.
+          <br><br>
+          Por favor, tente novamente mais tarde.
+        </div>
+      `;
+    }
+
+    errorMessage.innerHTML = errorDetails;
     chatContainer.appendChild(errorMessage);
   }
 }
