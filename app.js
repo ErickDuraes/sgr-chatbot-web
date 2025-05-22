@@ -32,8 +32,24 @@ async function perguntar() {
     console.log('Status da resposta:', resp.status);
     console.log('Headers da resposta:', Object.fromEntries(resp.headers.entries()));
 
-    const data = await resp.json();
-    console.log('Dados recebidos da API:', data);
+    // Verifica se a resposta está ok antes de tentar parsear o JSON
+    if (!resp.ok) {
+      throw new Error(`Erro na API: ${resp.status} ${resp.statusText}`);
+    }
+
+    // Tenta ler o texto da resposta primeiro para debug
+    const responseText = await resp.text();
+    console.log('Resposta bruta da API:', responseText);
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Erro ao parsear JSON:', parseError);
+      throw new Error(`Resposta inválida da API: ${responseText}`);
+    }
+
+    console.log('Dados parseados da API:', data);
 
     // Esconde o indicador de digitação
     typingIndicator.style.display = 'none';
