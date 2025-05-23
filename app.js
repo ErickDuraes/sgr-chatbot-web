@@ -1,14 +1,13 @@
 // Configurações do QnA Maker
 const QNA_CONFIG = {
-    endpoint: 'https://sgr-chatbot.azurewebsites.net/qnamaker',
-    key: 'YOUR-QNA-MAKER-KEY', // Substitua pela sua chave do QnA Maker
-    knowledgeBaseId: 'YOUR-KNOWLEDGE-BASE-ID' // Substitua pelo ID da sua base de conhecimento
+    endpoint: process.env.QNA_ENDPOINT,
+    key: process.env.QNA_KEY,
+    knowledgeBaseId: process.env.QNA_KB_ID
 };
 
 // Elementos do DOM
 const chatContainer = document.querySelector('.chat-container');
 const inputPergunta = document.getElementById('inputPergunta');
-const inputResposta = document.getElementById('inputResposta');
 const typingIndicator = document.getElementById('typingIndicator');
 
 // Função para adicionar mensagem ao chat
@@ -49,34 +48,6 @@ function mostrarErro(titulo, mensagem, detalhes = null) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Função para copiar resposta
-function copiarResposta() {
-    const resposta = inputResposta.value;
-    if (!resposta) return;
-
-    navigator.clipboard.writeText(resposta).then(() => {
-        const botao = document.querySelector('.button-group button');
-        const textoOriginal = botao.innerHTML;
-        
-        botao.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Copiado!
-        `;
-        
-        setTimeout(() => {
-            botao.innerHTML = textoOriginal;
-        }, 2000);
-    }).catch(err => {
-        mostrarErro(
-            'Erro ao copiar',
-            'Não foi possível copiar a resposta.',
-            err.message
-        );
-    });
-}
-
 // Função principal para fazer perguntas
 async function perguntar() {
     const pergunta = inputPergunta.value.trim();
@@ -88,12 +59,16 @@ async function perguntar() {
     toggleTypingIndicator(true);
 
     try {
-        const response = await fetch('https://sgr-chatbot.azurewebsites.net/api/chat', {
+        const response = await fetch(`${QNA_CONFIG.endpoint}/knowledgebases/${QNA_CONFIG.knowledgeBaseId}/generateAnswer`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `EndpointKey ${QNA_CONFIG.key}`
             },
-            body: JSON.stringify({ pergunta: pergunta })
+            body: JSON.stringify({
+                question: pergunta,
+                top: 1
+            })
         });
 
         if (!response.ok) {
@@ -103,14 +78,11 @@ async function perguntar() {
         const data = await response.json();
         toggleTypingIndicator(false);
         
-        if (data.answer) {
-            // Atualiza o campo de resposta
-            inputResposta.value = data.answer;
-            
+        if (data.answers && data.answers.length > 0) {
+            const answer = data.answers[0];
             // Adiciona a resposta ao chat
-            adicionarMensagem(data.answer, 'assistant', data.confidence);
+            adicionarMensagem(answer.answer, 'assistant', answer.score);
         } else {
-            inputResposta.value = '';
             mostrarErro(
                 'Resposta não encontrada',
                 'Não foi possível encontrar uma resposta para sua pergunta.',
@@ -119,7 +91,6 @@ async function perguntar() {
         }
     } catch (error) {
         toggleTypingIndicator(false);
-        inputResposta.value = '';
         
         if (error.message.includes('Failed to fetch')) {
             mostrarErro(
@@ -133,11 +104,11 @@ async function perguntar() {
                 'A rota da API não foi encontrada.',
                 'Verifique se o servidor está configurado corretamente.'
             );
-        } else if (error.message.includes('405')) {
+        } else if (error.message.includes('401')) {
             mostrarErro(
-                'Método não permitido',
-                'O método de requisição não é permitido.',
-                'Verifique se está usando o método POST corretamente.'
+                'Erro de Autenticação',
+                'Chave de API inválida ou não autorizada.',
+                'Verifique se a chave de API está correta.'
             );
         } else {
             mostrarErro(
