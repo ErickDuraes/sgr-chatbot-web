@@ -31,4 +31,4 @@ jobs:
           action: "upload"
           app_location: "/app"         # caminho do seu frontend
           api_location: ""             # deixar vazio se não usar Functions
-          output_location: "/app/build"  # pasta gerada pelo build
+          output_location: ""  # pasta gerada pelo build
