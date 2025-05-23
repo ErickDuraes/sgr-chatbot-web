@@ -8,13 +8,20 @@ const QNA_CONFIG = {
 // Elementos do DOM
 const chatContainer = document.querySelector('.chat-container');
 const inputPergunta = document.getElementById('inputPergunta');
+const inputResposta = document.getElementById('inputResposta');
 const typingIndicator = document.getElementById('typingIndicator');
 
 // Função para adicionar mensagem ao chat
-function adicionarMensagem(texto, tipo) {
+function adicionarMensagem(texto, tipo, confianca = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${tipo}-message`;
-    messageDiv.textContent = texto;
+    
+    let html = texto;
+    if (confianca !== null) {
+        html += `<div class="confidence-badge">Confiança: ${(confianca * 100).toFixed(1)}%</div>`;
+    }
+    
+    messageDiv.innerHTML = html;
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
@@ -42,6 +49,34 @@ function mostrarErro(titulo, mensagem, detalhes = null) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+// Função para copiar resposta
+function copiarResposta() {
+    const resposta = inputResposta.value;
+    if (!resposta) return;
+
+    navigator.clipboard.writeText(resposta).then(() => {
+        const botao = document.querySelector('.button-group button');
+        const textoOriginal = botao.innerHTML;
+        
+        botao.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Copiado!
+        `;
+        
+        setTimeout(() => {
+            botao.innerHTML = textoOriginal;
+        }, 2000);
+    }).catch(err => {
+        mostrarErro(
+            'Erro ao copiar',
+            'Não foi possível copiar a resposta.',
+            err.message
+        );
+    });
+}
+
 // Função principal para fazer perguntas
 async function perguntar() {
     const pergunta = inputPergunta.value.trim();
@@ -53,12 +88,12 @@ async function perguntar() {
     toggleTypingIndicator(true);
 
     try {
-        const response = await fetch('/api/chat', {
+        const response = await fetch('https://sgr-chatbot.azurewebsites.net/api/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ question: pergunta })
+            body: JSON.stringify({ pergunta: pergunta })
         });
 
         if (!response.ok) {
@@ -68,9 +103,14 @@ async function perguntar() {
         const data = await response.json();
         toggleTypingIndicator(false);
         
-        if (data.answer) {
-            adicionarMensagem(data.answer, 'assistant');
+        if (data.resposta) {
+            // Atualiza o campo de resposta
+            inputResposta.value = data.resposta;
+            
+            // Adiciona a resposta ao chat
+            adicionarMensagem(data.resposta, 'assistant', data.confidence);
         } else {
+            inputResposta.value = '';
             mostrarErro(
                 'Resposta não encontrada',
                 'Não foi possível encontrar uma resposta para sua pergunta.',
@@ -79,6 +119,7 @@ async function perguntar() {
         }
     } catch (error) {
         toggleTypingIndicator(false);
+        inputResposta.value = '';
         
         if (error.message.includes('Failed to fetch')) {
             mostrarErro(
