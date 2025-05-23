@@ -1,133 +1,77 @@
 const express = require('express');
-const cors = require('cors');
+const path = require('path');
 const axios = require('axios');
 const app = express();
 
-// Middleware
-app.use(cors());
+// Configurações do QnA Maker
+const QNA_CONFIG = {
+    endpoint: process.env.QNA_ENDPOINT || 'https://sgr-chatbot.azurewebsites.net/qnamaker',
+    key: process.env.QNA_KEY || 'YOUR-QNA-MAKER-KEY',
+    knowledgeBaseId: process.env.QNA_KB_ID || 'YOUR-KNOWLEDGE-BASE-ID'
+};
+
+// Middleware para parsing de JSON
 app.use(express.json());
-app.use(express.static('.'));
 
-// Middleware de logging
-app.use((req, res, next) => {
-  console.log('\n=== Nova Requisição ===');
-  console.log('Método:', req.method);
-  console.log('URL:', req.url);
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  next();
+// Servir arquivos estáticos
+app.use(express.static(path.join(__dirname)));
+
+// Rota principal
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rota da API
+// Rota da API do chat
 app.post('/api/chat', async (req, res) => {
-  console.log('\n=== Iniciando Processamento da Pergunta ===');
-  const pergunta = req.body.pergunta;
-  
-  if (!pergunta) {
-    console.log('❌ Erro: Pergunta vazia');
-    return res.status(400).json({ resposta: 'Pergunta vazia.' });
-  }
+    try {
+        const { question } = req.body;
 
-  console.log('✅ Pergunta recebida:', pergunta);
+        if (!question) {
+            return res.status(400).json({ error: 'Pergunta não fornecida' });
+        }
 
-  try {
-    // Verifica variáveis de ambiente
-    console.log('\n=== Verificando Variáveis de Ambiente ===');
-    const envVars = {
-      QNA_ENDPOINT: process.env.QNA_ENDPOINT,
-      QNA_KB_ID: process.env.QNA_KB_ID,
-      QNA_KEY: process.env.QNA_KEY ? '***' : undefined
-    };
-    console.log('Variáveis de ambiente:', envVars);
+        // Construir URL do QnA Maker
+        const url = `${QNA_CONFIG.endpoint}/knowledgebases/${QNA_CONFIG.knowledgeBaseId}/generateAnswer`;
 
-    if (!envVars.QNA_ENDPOINT || !envVars.QNA_KB_ID || !envVars.QNA_KEY) {
-      throw new Error('Variáveis de ambiente não configuradas corretamente');
+        // Fazer requisição para o QnA Maker
+        const response = await axios.post(url, {
+            question: question
+        }, {
+            headers: {
+                'Authorization': `EndpointKey ${QNA_CONFIG.key}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Verificar se há respostas
+        if (response.data.answers && response.data.answers.length > 0) {
+            const bestAnswer = response.data.answers[0];
+            return res.json({
+                answer: bestAnswer.answer,
+                confidence: bestAnswer.score
+            });
+        }
+
+        // Se não houver respostas
+        return res.json({
+            answer: 'Desculpe, não encontrei uma resposta para sua pergunta.'
+        });
+
+    } catch (error) {
+        console.error('Erro ao processar pergunta:', error);
+        res.status(500).json({
+            error: 'Erro ao processar sua pergunta',
+            details: error.message
+        });
     }
-
-    // Monta o endpoint
-    console.log('\n=== Montando Endpoint ===');
-    const endpoint = `${process.env.QNA_ENDPOINT}/language/:query-knowledgebases` +
-                    `?projectName=${process.env.QNA_KB_ID}` +
-                    `&deploymentName=production` +
-                    `&api-version=2021-10-01`;
-    console.log('Endpoint montado:', endpoint);
-
-    // Prepara a requisição
-    console.log('\n=== Preparando Requisição para QnA ===');
-    const requestConfig = {
-      headers: {
-        'Authorization': `EndpointKey ${process.env.QNA_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    };
-    console.log('Configuração da requisição:', {
-      ...requestConfig,
-      headers: {
-        ...requestConfig.headers,
-        'Authorization': '***'
-      }
-    });
-
-    // Chama o serviço de Custom Q&A
-    console.log('\n=== Enviando Requisição para QnA ===');
-    console.log('Payload:', { question: pergunta });
-    
-    const resp = await axios.post(
-      endpoint,
-      { question: pergunta },
-      requestConfig
-    );
-
-    console.log('\n=== Resposta Recebida do QnA ===');
-    console.log('Status:', resp.status);
-    console.log('Headers:', resp.headers);
-    console.log('Dados:', resp.data);
-
-    // Extrai a melhor resposta
-    const best = resp.data.answers?.[0]?.answer;
-    console.log('\n=== Processando Resposta ===');
-    console.log('Melhor resposta encontrada:', best || 'Nenhuma resposta encontrada');
-
-    res.json({ resposta: best || 'Não encontrei resposta.' });
-    console.log('\n✅ Requisição processada com sucesso');
-
-  } catch (err) {
-    console.error('\n❌ ERRO DETALHADO:');
-    console.error('Mensagem:', err.message);
-    console.error('Stack:', err.stack);
-    
-    if (err.response) {
-      console.error('\nDetalhes da Resposta de Erro:');
-      console.error('Status:', err.response.status);
-      console.error('Headers:', err.response.headers);
-      console.error('Data:', err.response.data);
-    }
-
-    res.status(500).json({ 
-      resposta: 'Erro ao consultar Q&A.',
-      detalhes: err.message
-    });
-  }
 });
 
-// Tratamento de erros global
-app.use((err, req, res, next) => {
-  console.error('\n❌ ERRO GLOBAL:');
-  console.error(err);
-  res.status(500).json({ 
-    resposta: 'Erro interno do servidor',
-    detalhes: err.message
-  });
-});
-
-// Inicia o servidor
-const PORT = process.env.PORT || 5500;
+// Iniciar servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log('\n=== Servidor Iniciado ===');
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log('📝 Logs detalhados ativados');
-  console.log('⚠️  Verifique se as variáveis de ambiente estão configuradas:');
-  console.log('   - QNA_ENDPOINT');
-  console.log('   - QNA_KB_ID');
-  console.log('   - QNA_KEY');
+    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log('Configurações do QnA Maker:');
+    console.log(`- Endpoint: ${QNA_CONFIG.endpoint}`);
+    console.log(`- Knowledge Base ID: ${QNA_CONFIG.knowledgeBaseId}`);
+    console.log(`- Key: ${QNA_CONFIG.key ? 'Configurada' : 'Não configurada'}`);
 }); 
