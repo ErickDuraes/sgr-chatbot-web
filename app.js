@@ -103,12 +103,12 @@ async function perguntar() {
         const data = await response.json();
         toggleTypingIndicator(false);
         
-        if (data.resposta) {
+        if (data.answer) {
             // Atualiza o campo de resposta
-            inputResposta.value = data.resposta;
+            inputResposta.value = data.answer;
             
             // Adiciona a resposta ao chat
-            adicionarMensagem(data.resposta, 'assistant', data.confidence);
+            adicionarMensagem(data.answer, 'assistant', data.confidence);
         } else {
             inputResposta.value = '';
             mostrarErro(

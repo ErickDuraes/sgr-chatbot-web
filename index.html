@@ -3,38 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assistente Virtual SGR</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>SGR Suporte</title>
     <style>
         :root {
-            --primary: #0066FF;
-            --primary-light: #4D94FF;
-            --primary-dark: #0047B3;
-            --background: #0A0F1C;
+            --primary: #0052CC;
+            --primary-dark: #0747A6;
+            --primary-light: rgba(0, 82, 204, 0.1);
             --surface: rgba(255, 255, 255, 0.05);
             --surface-hover: rgba(255, 255, 255, 0.08);
-            --text: #FFFFFF;
+            --background: #0a0e17;
+            --text: #ffffff;
             --text-secondary: rgba(255, 255, 255, 0.7);
-            --error: #FF3D00;
-            --success: #00E676;
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            --glass: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --radius: 16px;
+            --glow: 0 0 20px rgba(0, 82, 204, 0.3);
+            --success: #36B37E;
+            --warning: #FFAB00;
+            --error: #FF5630;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, var(--background) 0%, #1A1F2E 100%);
+            background: var(--background);
             color: var(--text);
+            line-height: 1.6;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
             position: relative;
             overflow-x: hidden;
         }
@@ -47,8 +47,8 @@
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(circle at 20% 20%, rgba(0, 102, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(0, 102, 255, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 20% 20%, rgba(0, 82, 204, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 82, 204, 0.1) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
@@ -56,65 +56,60 @@
         .container {
             max-width: 1000px;
             margin: 0 auto;
-            padding: 2rem;
-            width: 100%;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
             position: relative;
             z-index: 1;
+            padding: 1rem;
         }
 
         .header {
             text-align: center;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-            background: var(--glass);
+            padding: 1rem;
+            background: var(--surface);
             backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            position: relative;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%);
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #4C9AFF 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
         }
 
         .header p {
             color: var(--text-secondary);
-            font-size: 1.1rem;
+            font-size: 0.9rem;
         }
 
         .chat-container {
             flex: 1;
-            background: var(--glass);
+            background: var(--surface);
             backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            box-shadow: var(--shadow);
+            margin-bottom: 1rem;
         }
 
         .message {
-            padding: 1rem 1.5rem;
-            border-radius: 20px;
-            max-width: 85%;
-            font-size: 1.05rem;
-            line-height: 1.6;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            max-width: 80%;
+            font-size: 0.95rem;
+            line-height: 1.5;
             animation: fadeIn 0.3s ease;
             position: relative;
-            overflow: hidden;
         }
 
         .message::before {
@@ -126,6 +121,7 @@
             bottom: 0;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
             pointer-events: none;
+            border-radius: inherit;
         }
 
         @keyframes fadeIn {
@@ -135,83 +131,85 @@
 
         .user-message {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
             align-self: flex-end;
             border-bottom-right-radius: 4px;
-            color: #fff;
-            font-weight: 500;
-            box-shadow: 0 4px 20px rgba(0, 102, 255, 0.2);
+            box-shadow: var(--glow);
         }
 
         .assistant-message {
             background: var(--surface);
+            color: var(--text);
             align-self: flex-start;
             border-bottom-left-radius: 4px;
-            color: var(--text);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        .error-message {
+            background: rgba(255, 86, 48, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(255, 86, 48, 0.2);
+            align-self: center;
+            max-width: 90%;
+            text-align: center;
         }
 
         .input-container {
-            background: var(--glass);
+            background: var(--surface);
             backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            box-shadow: var(--shadow);
-        }
-
-        .input-group {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
             display: flex;
             gap: 1rem;
+            align-items: center;
         }
 
         .input-field {
             flex: 1;
-            padding: 1rem 1.5rem;
-            background: var(--surface);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 20px;
             color: var(--text);
-            font-size: 1.05rem;
-            outline: none;
+            font-size: 0.95rem;
             transition: all 0.3s ease;
         }
 
         .input-field:focus {
-            background: var(--surface-hover);
+            outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
+            box-shadow: var(--glow);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .input-field::placeholder {
             color: var(--text-secondary);
         }
 
-        .button-group {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-
-        button {
-            padding: 0 2rem;
-            height: 3.5rem;
+        .button {
+            padding: 0.75rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
             border: none;
-            border-radius: 16px;
-            font-size: 1.05rem;
-            font-weight: 600;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
             cursor: pointer;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
+            justify-content: center;
             position: relative;
             overflow: hidden;
         }
 
-        button::before {
+        .button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .button::before {
             content: '';
             position: absolute;
             top: 0;
@@ -223,192 +221,120 @@
             transition: opacity 0.3s ease;
         }
 
-        button:hover::before {
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow);
+        }
+
+        .button:hover::before {
             opacity: 1;
         }
 
-        button.primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            box-shadow: 0 4px 20px rgba(0, 102, 255, 0.2);
-        }
-
-        button.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(0, 102, 255, 0.3);
-        }
-
-        button.secondary {
-            background: var(--surface);
-            color: var(--text);
-            border: 1px solid var(--glass-border);
-        }
-
-        button.secondary:hover {
-            background: var(--surface-hover);
-            transform: translateY(-2px);
+        .button:active {
+            transform: translateY(0);
         }
 
         .typing-indicator {
             display: none;
-            padding: 1rem 1.5rem;
-            background: var(--surface);
-            border-radius: 20px;
-            margin-bottom: 0.5rem;
-            align-self: flex-start;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .typing-indicator span {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background-color: var(--text-secondary);
-            border-radius: 50%;
-            margin: 0 2px;
-            animation: typing 1s infinite;
-        }
-
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
-        .error-message {
-            color: var(--error);
-            background: rgba(255, 61, 0, 0.1);
-            padding: 1rem 1.5rem;
-            border-radius: 20px;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            box-shadow: 0 4px 20px rgba(255, 61, 0, 0.1);
-        }
-
-        .error-message h3 {
-            margin-bottom: 0.5rem;
-            color: var(--error);
-        }
-
-        .error-message p {
+            padding: 0.5rem 1rem;
             color: var(--text-secondary);
-            font-size: 0.98em;
-        }
-
-        .error-message pre {
+            font-style: italic;
             background: var(--surface);
-            padding: 0.75rem;
-            border-radius: 12px;
-            margin-top: 0.5rem;
-            font-size: 0.95em;
-            color: var(--error);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            align-self: flex-start;
+            font-size: 0.9rem;
         }
 
         .confidence-badge {
-            font-size: 0.85em;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            background: rgba(0, 230, 118, 0.1);
-            color: var(--success);
-            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            padding: 0.15rem 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
             display: inline-block;
-            backdrop-filter: blur(4px);
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            .header {
-                padding: 1.5rem;
-                margin-bottom: 1.5rem;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .chat-container {
-                padding: 1rem;
-            }
-
-            .input-container {
-                padding: 1rem;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            button {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .message {
-                max-width: 90%;
-            }
         }
 
         /* Scrollbar personalizada */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         ::-webkit-scrollbar-track {
             background: var(--surface);
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb {
             background: var(--primary);
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary-dark);
         }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0.5rem;
+            }
+
+            .header {
+                padding: 0.75rem;
+            }
+
+            .header h1 {
+                font-size: 1.25rem;
+            }
+
+            .message {
+                max-width: 90%;
+                font-size: 0.9rem;
+            }
+
+            .input-container {
+                padding: 0.75rem;
+            }
+
+            .input-field {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+
+            .message {
+                max-width: 95%;
+                padding: 0.5rem 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Assistente Virtual SGR</h1>
+        <header class="header">
+            <h1>SGR Suporte</h1>
             <p>Como posso ajudar você hoje?</p>
+        </header>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="typing-indicator" id="typingIndicator">Digitando...</div>
         </div>
-        <div class="chat-container">
-            <div class="typing-indicator" id="typingIndicator">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
+
         <div class="input-container">
-            <div class="input-group">
-                <input id="inputPergunta" class="input-field" placeholder="Digite sua pergunta..." />
-                <button class="primary" onclick="perguntar()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    Enviar
-                </button>
-            </div>
-            <div class="input-group">
-                <input id="inputResposta" class="input-field" placeholder="Resposta da API..." readonly />
-                <div class="button-group">
-                    <button class="secondary" onclick="copiarResposta()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 4V16C8 16.5304 8.21071 17.0391 8.58579 17.4142C8.96086 17.7893 9.46957 18 10 18H18C18.5304 18 19.0391 17.7893 19.4142 17.4142C19.7893 17.0391 20 16.5304 20 16V7.242C20 6.97556 19.9467 6.71181 19.8433 6.46624C19.7399 6.22068 19.5885 5.99824 19.398 5.812L16.083 2.57C15.7094 2.20466 15.2076 2.00007 14.685 2H10C9.46957 2 8.96086 2.21071 8.58579 2.58579C8.21071 2.96086 8 3.46957 8 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16 18V20C16 20.5304 15.7893 21.0391 15.4142 21.4142C15.0391 21.7893 14.5304 22 14 22H6C5.46957 22 4.96086 21.7893 4.58579 21.4142C4.21071 21.0391 4 20.5304 4 20V9C4 8.46957 4.21071 7.96086 4.58579 7.58579C4.96086 7.21071 5.46957 7 6 7H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        Copiar
-                    </button>
-                </div>
-            </div>
+            <input type="text" id="inputPergunta" class="input-field" placeholder="Digite sua dúvida sobre o SGR...">
+            <button onclick="perguntar()" class="button">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
         </div>
     </div>
     <script src="app.js"></script>
